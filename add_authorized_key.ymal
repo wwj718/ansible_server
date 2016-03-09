@@ -1,0 +1,7 @@
+---
+ - name: add ssh authorized_key to cypress
+   hosts: test
+   tasks:
+     - name: copy https://github.com/wwj718.keys
+       authorized_key: user=wwj key=https://github.com/wwj718.keys
+

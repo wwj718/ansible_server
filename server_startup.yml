@@ -1,0 +1,54 @@
+---
+- name: create sudo user  wwj
+  hosts: test
+  sudo: yes
+  vars:
+    # created with:
+    # python -c 'import crypt; print crypt.crypt("This is my Password", "$1$SomeSalt$")'
+    password: $6$rounds=656000$PMFcJRM0bDkrrSyI$DIwMzUr1SBuzIqMhoKWdwPKwaYCuUvSpU8QqNOd.nzyOJadbkxNEscFTrPMZM7IpWr2f/Qe6y.x3HGpbcAi3l.  #abc123
+
+  tasks:
+    - user: name=wwj password={{password}} groups=sudo shell=/bin/bash append=yes generate_ssh_key=yes ssh_key_bits=2048 ssh_key_file=.ssh/id_rsa
+- name: add ssh authorized_key to server
+  hosts: test
+  sudo: yes
+  tasks:
+    - name: copy https://github.com/wwj718.keys
+      authorized_key: user=wwj key=https://github.com/wwj718.keys #should use sudo in my mac
+
+- name: install  some useful software
+  hosts: test
+  sudo: yes
+  tasks:
+    - name: install mosh fish vim
+      apt: name={{item}} state=installed
+      with_items:
+          - vim
+          - mosh
+          - fish
+          - git
+    - name: copy .vimrc
+      copy: src=files/.vimrc_for_server dest=/home/wwj/.vimrc owner=wwj group=wwj mode=644 backup=yes
+
+- name:  use z for moving
+  hosts: test
+  remote_user: wwj
+  sudo: yes
+  tasks:
+    - name: Get z from git
+      git: repo=https://github.com/rupa/z dest=/home/wwj/z
+    - name: Transfer the script
+      copy: src=scripts dest=/home/wwj mode=0777
+    - name: Execute the script
+      command: sh /home/wwj/scripts/use_z
+    - name: show message
+      shell: "/usr/bin/tail -n 5 /home/wwj/.bashrc"
+      register: out
+    - debug: var=out.stdout_lines
+  tags:
+      - z
+
+
+
+
+
